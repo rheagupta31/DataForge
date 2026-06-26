@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DataForge — English to SQL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #06080f;
+      --bg2:          #0b0e1a;
+      --surface:      #0f1220;
+      --surface2:     #141729;
+      --surface3:     #1a1f35;
+      --border:       rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.14);
+      --accent:       #6366f1;
+      --accent-glow:  rgba(99,102,241,0.25);
+      --accent2:      #22d3ee;
+      --accent2-glow: rgba(34,211,238,0.15);
+      --gold:         #f59e0b;
+      --text:         #e8eaf0;
+      --text-muted:   #5a6080;
+      --text-dim:     #8890b0;
+      --success:      #10b981;
+      --success-glow: rgba(16,185,129,0.15);
+      --error:        #ef4444;
+      --error-glow:   rgba(239,68,68,0.15);
+      --warn:         #f59e0b;
+      --radius:       14px;
+      --radius-sm:    8px;
+      --radius-xs:    5px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── Ambient background ───────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(99,102,241,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 50%;
+      height: 50%;
+      background: radial-gradient(ellipse, rgba(34,211,238,0.04) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    header {
+      position: relative;
+      z-index: 10;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6,8,15,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      position: relative;
+    }
+    .logo-mark svg { width: 100%; height: 100%; }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .brand-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #e8eaf0 0%, #8890b0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .brand-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+    .status-chip .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .status-chip.connected .dot {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+    .status-chip.connected { color: var(--text-dim); }
+
+    /* ── Layout ───────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: calc(100vh - 62px);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────────── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-right: 1px solid var(--border);
+      background: rgba(11,14,26,0.7);
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .sidebar-section {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-label a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      text-transform: none;
+      font-size: 0.68rem;
+      transition: opacity .2s;
+    }
+    .section-label a:hover { opacity: .7; }
+
+    /* API input */
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 38px 10px 12px;
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-wrap input::placeholder { color: var(--text-muted); font-family: 'Inter', sans-serif; }
+    .eye-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      transition: color .2s;
+    }
+    .eye-btn:hover { color: var(--text-dim); }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 1px dashed var(--border-hover);
+      border-radius: var(--radius);
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .25s;
+      background: var(--surface2);
+      position: relative;
+      overflow: hidden;
+    }
+    .drop-zone::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-glow), transparent);
+      opacity: 0;
+      transition: opacity .25s;
+    }
+    .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      border-style: solid;
+    }
+    .drop-icon {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 10px;
+      opacity: .4;
+    }
+    .drop-zone p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; position: relative; }
+    .drop-zone span { color: var(--accent); }
+    #db-file-input { display: none; }
+
+    .db-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: var(--success-glow);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 0.78rem;
+    }
+    .db-badge.show { display: flex; }
+    .db-badge .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); flex-shrink: 0; }
+    .db-badge .badge-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+    .db-badge .badge-remove { cursor: pointer; color: var(--text-muted); flex-shrink: 0; line-height: 1; transition: color .2s; }
+    .db-badge .badge-remove:hover { color: var(--error); }
+
+    /* Schema tree */
+    .schema-empty { font-size: 0.78rem; color: var(--text-muted); padding: 4px 0; line-height: 1.6; }
+
+    .table-item + .table-item { margin-top: 2px; }
+
+    .table-name {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 6px 8px;
+      border-radius: var(--radius-xs);
+      transition: background .15s, color .15s;
+      color: var(--text-dim);
+    }
+    .table-name:hover { background: var(--surface3); color: var(--text); }
+    .table-name .t-icon {
+      width: 14px;
+      height: 14px;
+      opacity: .5;
+      flex-shrink: 0;
+    }
+    .table-name .t-arrow {
+      width: 10px;
+      height: 10px;
+      margin-left: auto;
+      opacity: .4;
+      transition: transform .2s;
+      flex-shrink: 0;
+    }
+    .table-name.open .t-arrow { transform: rotate(90deg); }
+
+    .col-list {
+      display: none;
+      flex-direction: column;
+      gap: 1px;
+      padding: 3px 0 3px 26px;
+    }
+    .col-list.open { display: flex; }
+
+    .col-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      padding: 3px 6px;
+      border-radius: var(--radius-xs);
+      color: var(--text-muted);
+    }
+    .col-item .col-name { color: var(--text-dim); }
+    .col-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.63rem;
+      background: var(--surface3);
+      color: var(--accent);
+      border-radius: 3px;
+      padding: 1px 5px;
+    }
+    .pk-tag {
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: var(--gold);
+      background: rgba(245,158,11,0.1);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 3px;
+      padding: 0 4px;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Right panel ──────────────────────────────────────────────── */
+    .right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Query area */
+    .query-area {
+      padding: 24px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,14,26,0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .query-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .query-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .query-row textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      min-height: 78px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .query-row textarea:focus {
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .query-row textarea::placeholder { color: var(--text-muted); }
+
+    .run-btn {
+      height: 48px;
+      padding: 0 24px;
+      background: var(--accent);
+      background: linear-gradient(135deg, #6366f1, #818cf8);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: opacity .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+    }
+    .run-btn:hover { opacity: .9; box-shadow: 0 4px 28px rgba(99,102,241,0.45); }
+    .run-btn:active { transform: scale(.97); }
+    .run-btn:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+
+    .run-btn .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    .run-btn.loading .spinner { display: block; }
+    .run-btn.loading .btn-text { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Chips */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--text); background: var(--accent-glow); }
+
+    /* Error banner */
+    .err-banner {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(239,68,68,0.25);
+      background: var(--error-glow);
+      font-size: 0.8rem;
+      color: #fca5a5;
+    }
+    .err-banner.show { display: block; }
+
+    /* ── Results ──────────────────────────────────────────────────── */
+    .results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .results::-webkit-scrollbar { width: 4px; }
+    .results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Placeholder */
+    .placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--text-muted);
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .placeholder-icon {
+      width: 56px;
+      height: 56px;
+      opacity: .12;
+    }
+    .placeholder h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      opacity: .6;
+    }
+    .placeholder p { font-size: 0.8rem; line-height: 1.7; opacity: .5; max-width: 340px; }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      animation: fadeUp .3s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card:nth-child(2) { animation-delay: .06s; }
+    .card:nth-child(3) { animation-delay: .12s; }
+    .card:nth-child(4) { animation-delay: .18s; }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-head-icon {
+      width: 16px; height: 16px;
+      opacity: .5;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+    .card-badge {
+      margin-left: auto;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-ok  { background: var(--success-glow); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+    .badge-err { background: var(--error-glow); color: var(--error); border: 1px solid rgba(239,68,68,0.2); }
+    .badge-warn{ background: rgba(245,158,11,0.1); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+    .badge-info{ background: var(--accent-glow); color: #818cf8; border: 1px solid rgba(99,102,241,0.2); }
+
+    /* SQL block */
+    .sql-block {
+      padding: 16px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #c8cbe8;
+      background: rgba(0,0,0,0.25);
+    }
+    .kw  { color: #818cf8; font-weight: 500; }
+    .fn  { color: #34d399; }
+    .str { color: #fbbf24; }
+    .num { color: #f472b6; }
+    .cmt { color: #4a5070; font-style: italic; }
+
+    /* Data table */
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    thead th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.66rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background .12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(99,102,241,0.04); }
+    tbody td { padding: 10px 16px; color: var(--text); font-family: 'Inter', sans-serif; }
+    .null-cell { color: var(--text-muted); font-style: italic; font-size: 0.75rem; }
+
+    .tbl-footer {
+      padding: 8px 16px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      text-align: right;
+      letter-spacing: 0.2px;
+    }
+
+    /* Debug log */
+    .debug-list { display: flex; flex-direction: column; }
+    .debug-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .debug-item:last-child { border-bottom: none; }
+    .debug-attempt-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 6px;
+    }
+    .debug-attempt-label.ok  { color: var(--success); }
+    .debug-attempt-label.err { color: var(--error); }
+    .debug-error-msg {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      color: #fca5a5;
+      background: rgba(239,68,68,0.07);
+      border-radius: var(--radius-xs);
+      padding: 6px 10px;
+      margin-bottom: 8px;
+    }
+    .debug-sql-block {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      color: #8890b0;
+      background: rgba(0,0,0,0.2);
+      border-radius: var(--radius-xs);
+      padding: 8px 12px;
+      white-space: pre-wrap;
+    }
+
+    /* JSON panel */
+    .json-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      transition: color .15s;
+      user-select: none;
+    }
+    .json-toggle:hover { color: var(--text-dim); }
+    .json-toggle svg { width: 12px; height: 12px; transition: transform .2s; }
+    .json-toggle.open svg { transform: rotate(90deg); }
+    .json-body {
+      display: none;
+      padding: 14px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: #64748b;
+      white-space: pre-wrap;
+      background: rgba(0,0,0,0.25);
+      border-top: 1px solid var(--border);
+      line-height: 1.7;
+    }
+    .json-body.open { display: block; }
+    .json-key   { color: #818cf8; }
+    .json-str   { color: #34d399; }
+    .json-num   { color: #f472b6; }
+    .json-bool  { color: #fbbf24; }
+    .json-null  { color: #6b7280; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 22px;
+      right: 24px;
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      background: var(--surface3);
+      border: 1px solid var(--border-hover);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all .3s ease;
+      pointer-events: none;
+      z-index: 999;
+      backdrop-filter: blur(10px);
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Empty state inside table */
+    .no-rows {
+      padding: 32px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────── -->
+<header>
+  <div class="header-left">
+    <div class="logo-mark">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#6366f1"/>
+            <stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient>
+          <linearGradient id="lg2" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#818cf8"/>
+            <stop offset="1" stop-color="#67e8f9"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Hexagon base -->
+        <path d="M18 2L32 10V26L18 34L4 26V10L18 2Z" fill="url(#lg1)" opacity=".15"/>
+        <path d="M18 2L32 10V26L18 34L4 26V10L18 2Z" stroke="url(#lg1)" stroke-width="1.2" fill="none"/>
+        <!-- D letter stylized as chevron + bar -->
+        <path d="M12 12h5c3.5 0 6 2.7 6 6s-2.5 6-6 6h-5V12z" stroke="url(#lg2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" filter="url(#glow)"/>
+        <!-- Spark / cursor -->
+        <circle cx="26" cy="11" r="2" fill="#22d3ee" opacity=".9" filter="url(#glow)"/>
+        <path d="M26 8v-2M26 14v2M29 11h2M23 11h-2M28.1 8.9l1.4-1.4M23.9 13.1l-1.4 1.4M29.1 13.1l1.4 1.4M23.9 8.9l-1.4-1.4" stroke="#22d3ee" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <span class="brand-name">DataForge</span>
+      <span class="brand-sub">English to SQL</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-chip" id="conn-chip">
+      <div class="dot"></div>
+      <span id="conn-label">No database</span>
+    </div>
+    <div class="status-chip" style="gap:5px;">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#5a6080" stroke-width="1.5"/><path d="M5 3v2.5l1.5 1" stroke="#5a6080" stroke-width="1.2" stroke-linecap="round"/></svg>
+      Groq · LLaMA 3.3
+    </div>
+  </div>
+</header>
+
+<!-- ── Layout ──────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- API Key -->
+    <div class="sidebar-section">
+      <div class="section-label">
+        API Key
+        <a href="https://console.groq.com/keys" target="_blank">Get free key</a>
+      </div>
+      <div class="input-wrap">
+        <input id="api-key" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false" />
+        <span class="eye-btn" onclick="toggleKey()" title="Toggle visibility">
+          <svg id="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Database -->
+    <div class="sidebar-section">
+      <div class="section-label">Database</div>
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('db-file-input').click()">
+        <svg class="drop-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="18" cy="9" rx="12" ry="5" stroke="#5a6080" stroke-width="1.5"/>
+          <path d="M6 9v9c0 2.76 5.37 5 12 5s12-2.24 12-5V9" stroke="#5a6080" stroke-width="1.5"/>
+          <path d="M6 18v9c0 2.76 5.37 5 12 5s12-2.24 12-5v-9" stroke="#5a6080" stroke-width="1.5"/>
+        </svg>
+        <p>Drop your <span>.db file</span> here<br/>or click to browse</p>
+      </div>
+      <input type="file" id="db-file-input" accept=".db" />
+      <div class="db-badge" id="db-badge">
+        <div class="badge-dot"></div>
+        <span class="badge-name" id="db-name"></span>
+        <span class="badge-remove" onclick="removeDb()" title="Remove">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+      </div>
+    </div>
+
+    <!-- Schema -->
+    <div class="sidebar-section" style="flex:1; border-bottom:none;">
+      <div class="section-label">Schema</div>
+      <div id="schema-tree">
+        <p class="schema-empty">Upload a database to explore its schema.</p>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Right panel -->
+  <div class="right">
+
+    <!-- Query area -->
+    <div class="query-area">
+      <div class="query-label">Natural Language Query</div>
+      <div class="query-row">
+        <textarea id="query-input" placeholder="Ask anything about your data in plain English..." rows="3"></textarea>
+        <button class="run-btn" id="run-btn" onclick="runQuery()">
+          <div class="spinner"></div>
+          <span class="btn-text">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="display:inline;vertical-align:middle;margin-right:5px;"><polygon points="3,1 12,6.5 3,12" fill="white"/></svg>
+            Run
+          </span>
+        </button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="err-banner" id="err-banner"></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results" id="results">
+      <div class="placeholder" id="placeholder">
+        <svg class="placeholder-icon" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="48" height="48" rx="12" stroke="white" stroke-width="2"/>
+          <path d="M14 20h28M14 28h20M14 36h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <h3>Ready to query</h3>
+        <p>Upload a SQLite database, enter your Groq API key, and ask anything about your data — in plain English.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────
+  let dbPath    = null;
+  let schemaStr = null;
+  let schemaObj = null;
+
+  // ── Key toggle ────────────────────────────────────────────────────
+  function toggleKey() {
+    const inp = document.getElementById('api-key');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  // ── Upload ────────────────────────────────────────────────────────
+  const dropZone  = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('db-file-input');
+
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) uploadFile(e.target.files[0]);
+  });
+
+  async function uploadFile(file) {
+    if (!file.name.endsWith('.db')) { toast('Only .db files are supported'); return; }
+    toast('Uploading database...');
+    const fd = new FormData();
+    fd.append('db_file', file);
+    try {
+      const res  = await fetch('/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.error) { toast(data.error); return; }
+
+      dbPath    = data.db_path;
+      schemaStr = data.schema_str;
+      schemaObj = data.schema;
+
+      document.getElementById('db-name').textContent = file.name;
+      document.getElementById('db-badge').classList.add('show');
+      dropZone.style.display = 'none';
+
+      setConnected(true, file.name);
+      renderSchema(schemaObj);
+      renderChips(data.tables);
+      toast('Database loaded — ' + data.tables.length + ' table(s)');
+    } catch(e) {
+      toast('Upload failed: ' + e.message);
+    }
+  }
+
+  function removeDb() {
+    dbPath = schemaStr = schemaObj = null;
+    document.getElementById('db-badge').classList.remove('show');
+    document.getElementById('drop-zone').style.display = '';
+    document.getElementById('schema-tree').innerHTML = '<p class="schema-empty">Upload a database to explore its schema.</p>';
+    document.getElementById('chips').innerHTML = '';
+    fileInput.value = '';
+    setConnected(false);
+  }
+
+  function setConnected(on, name) {
+    const chip  = document.getElementById('conn-chip');
+    const label = document.getElementById('conn-label');
+    if (on) {
+      chip.classList.add('connected');
+      label.textContent = name || 'Connected';
+    } else {
+      chip.classList.remove('connected');
+      label.textContent = 'No database';
+    }
+  }
+
+  // ── Schema tree ───────────────────────────────────────────────────
+  function renderSchema(schema) {
+    const tree = document.getElementById('schema-tree');
+    tree.innerHTML = '';
+    for (const [table, cols] of Object.entries(schema)) {
+      const item = document.createElement('div');
+      item.className = 'table-item';
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'table-name';
+      nameEl.innerHTML = `
+        <svg class="t-icon" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M1 5h12M5 5v7" stroke="currentColor" stroke-width="1.2"/></svg>
+        ${table}
+        <svg class="t-arrow" viewBox="0 0 10 10" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      `;
+
+      const colList = document.createElement('div');
+      colList.className = 'col-list';
+
+      nameEl.onclick = () => {
+        nameEl.classList.toggle('open');
+        colList.classList.toggle('open');
+      };
+
+      cols.forEach(c => {
+        const ci = document.createElement('div');
+        ci.className = 'col-item';
+        ci.innerHTML = `
+          <span class="col-name">${c.name}</span>
+          <span class="col-type">${c.type || 'TEXT'}</span>
+          ${c.pk ? '<span class="pk-tag">PK</span>' : ''}
+        `;
+        colList.appendChild(ci);
+      });
+
+      item.appendChild(nameEl);
+      item.appendChild(colList);
+      tree.appendChild(item);
+    }
+  }
+
+  // ── Chips ─────────────────────────────────────────────────────────
+  function renderChips(tables) {
+    const bar   = document.getElementById('chips');
+    bar.innerHTML = '';
+    const pool  = [];
+    if (tables.includes('customers')) pool.push('Show all customers');
+    if (tables.includes('orders'))    pool.push('How many orders per status?');
+    if (tables.includes('products'))  pool.push('Top 5 most expensive products');
+    if (tables.includes('employees')) pool.push('Employees above average salary');
+    if (tables.length > 0)            pool.push('Count rows in each table');
+    pool.slice(0, 5).forEach(text => {
+      const c = document.createElement('span');
+      c.className = 'chip';
+      c.textContent = text;
+      c.onclick = () => { document.getElementById('query-input').value = text; };
+      bar.appendChild(c);
+    });
+  }
+
+  // ── Run query ─────────────────────────────────────────────────────
+  async function runQuery() {
+    const english = document.getElementById('query-input').value.trim();
+    const apiKey  = document.getElementById('api-key').value.trim();
+    const banner  = document.getElementById('err-banner');
+    banner.classList.remove('show');
+
+    if (!english) { showBanner('Please enter a query.'); return; }
+    if (!dbPath)  { showBanner('No database loaded. Please upload a .db file.'); return; }
+    if (!apiKey)  { showBanner('Please enter your Groq API key.'); return; }
+
+    const btn = document.getElementById('run-btn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    const results = document.getElementById('results');
+    results.innerHTML = `
+      <div class="placeholder">
+        <svg class="placeholder-icon" style="opacity:.08;animation:spin 2s linear infinite" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="22" stroke="white" stroke-width="3" stroke-dasharray="34 100"/></svg>
+        <h3>Generating SQL</h3>
+        <p>Sending your question to LLaMA 3.3...</p>
+      </div>`;
+
+    try {
+      const res  = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ english, db_path: dbPath, api_key: apiKey, schema_str: schemaStr })
+      });
+      const data = await res.json();
+      if (data.error) { showBanner(data.error); results.innerHTML = ''; return; }
+      renderResults(data);
+    } catch(e) {
+      showBanner('Request failed: ' + e.message);
+      results.innerHTML = '';
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('query-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runQuery();
+    });
+  });
+
+  // ── Render results ────────────────────────────────────────────────
+  function renderResults(data) {
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+
+    const ok       = data.final_status === 'success';
+    const hasDebug = data.debug_attempts && data.debug_attempts.length > 0;
+
+    // SQL card
+    const sqlCard = card('Generated SQL', ok ? 'ok' : 'err', ok ? 'Executed' : 'Failed',
+      `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`);
+    const sqlBlock = el('div', 'sql-block');
+    sqlBlock.innerHTML = highlightSQL(data.final_sql || data.sql_generated || '');
+    sqlCard.body.appendChild(sqlBlock);
+    container.appendChild(sqlCard.el);
+
+    // Debug card
+    if (hasDebug) {
+      const dbCard = card('Auto-Debug Log', 'warn', data.debug_attempts.length + ' attempt(s)',
+        `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v4M8 11v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`);
+      const list = el('div', 'debug-list');
+      data.debug_attempts.forEach(a => {
+        const item = el('div', 'debug-item');
+        const isOk = a.status === 'success';
+        const lbl  = el('div', `debug-attempt-label ${isOk ? 'ok' : 'err'}`);
+        lbl.textContent = `Attempt ${a.attempt} — ${isOk ? 'Succeeded' : 'Failed'}`;
+        item.appendChild(lbl);
+        if (a.error) {
+          const errDiv = el('div', 'debug-error-msg');
+          errDiv.textContent = a.error;
+          item.appendChild(errDiv);
+        }
+        const sqlDiv = el('div', 'debug-sql-block');
+        sqlDiv.textContent = a.modified_sql;
+        item.appendChild(sqlDiv);
+        list.appendChild(item);
+      });
+      dbCard.body.appendChild(list);
+      container.appendChild(dbCard.el);
+    }
+
+    // Results table card
+    if (ok) {
+      const tCard = card('Results', 'info', data.result_rows + ' row(s)',
+        `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 6h14M6 6v8" stroke="currentColor" stroke-width="1.2"/></svg>`);
+
+      if (data.rows && data.rows.length > 0) {
+        const wrap = el('div', 'tbl-wrap');
+        const tbl  = document.createElement('table');
+        const head = document.createElement('thead');
+        const hrow = document.createElement('tr');
+        (data.columns || []).forEach(c => {
+          const th = document.createElement('th');
+          th.textContent = c;
+          hrow.appendChild(th);
+        });
+        head.appendChild(hrow);
+        tbl.appendChild(head);
+
+        const body = document.createElement('tbody');
+        data.rows.forEach(row => {
+          const tr = document.createElement('tr');
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            if (cell === null || cell === undefined) {
+              td.innerHTML = '<span class="null-cell">null</span>';
+            } else {
+              td.textContent = cell;
+            }
+            tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        });
+        tbl.appendChild(body);
+        wrap.appendChild(tbl);
+        tCard.body.appendChild(wrap);
+
+        const foot = el('div', 'tbl-footer');
+        foot.textContent = data.result_rows + ' row(s) returned';
+        tCard.body.appendChild(foot);
+      } else {
+        const nr = el('div', 'no-rows');
+        nr.textContent = 'Query executed successfully — no rows returned.';
+        tCard.body.appendChild(nr);
+      }
+      container.appendChild(tCard.el);
+    }
+
+    // JSON card
+    const jCard = card('JSON Response', 'info', '',
+      `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><path d="M5 2H3a1 1 0 00-1 1v10a1 1 0 001 1h2M11 2h2a1 1 0 011 1v10a1 1 0 01-1 1h-2M7 6l-2 2 2 2M9 6l2 2-2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+    const toggle = el('div', 'json-toggle');
+    toggle.innerHTML = `<svg viewBox="0 0 12 12" fill="none"><path d="M3 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> View raw JSON`;
+    const jBody = el('div', 'json-body');
+    const sanitized = {...data}; delete sanitized.rows;
+    jBody.innerHTML = colorizeJSON(JSON.stringify(sanitized, null, 2));
+    toggle.onclick = () => {
+      const open = jBody.classList.toggle('open');
+      toggle.classList.toggle('open', open);
+      toggle.querySelector('svg').style.transform = open ? 'rotate(90deg)' : '';
+    };
+    jCard.body.appendChild(toggle);
+    jCard.body.appendChild(jBody);
+    container.appendChild(jCard.el);
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  function card(title, badgeType, badgeText, iconHtml) {
+    const el_  = document.createElement('div');
+    el_.className = 'card';
+    const head = document.createElement('div');
+    head.className = 'card-head';
+    head.innerHTML = `${iconHtml}<span class="card-title">${title}</span>${badgeText ? `<span class="card-badge badge-${badgeType}">${badgeText}</span>` : ''}`;
+    const body = document.createElement('div');
+    el_.appendChild(head);
+    el_.appendChild(body);
+    return { el: el_, body };
+  }
+
+  function el(tag, cls) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
+
+  function showBanner(msg) {
+    const b = document.getElementById('err-banner');
+    b.textContent = msg;
+    b.classList.add('show');
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlightSQL(sql) {
+    if (!sql) return '';
+    const KWS = /\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|OUTER|CROSS|FULL|NATURAL|ON|GROUP\s+BY|ORDER\s+BY|HAVING|LIMIT|OFFSET|UNION|ALL|INTERSECT|EXCEPT|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|WITH|AS|AND|OR|NOT|IN|LIKE|BETWEEN|IS|NULL|DISTINCT|CASE|WHEN|THEN|ELSE|END|EXISTS|BY|ASC|DESC|USING)\b/gi;
+    const FNS = /\b(COUNT|SUM|AVG|MIN|MAX|ROUND|COALESCE|IFNULL|LENGTH|UPPER|LOWER|SUBSTR|TRIM|DATE|STRFTIME|CAST|ABS|GROUP_CONCAT)\b/gi;
+    return esc(sql)
+      .replace(/(--[^\n]*)/g, m => `<span class="cmt">${m}</span>`)
+      .replace(/('(?:[^'\\]|\\.)*')/g, m => `<span class="str">${m}</span>`)
+      .replace(FNS, m => `<span class="fn">${m}</span>`)
+      .replace(KWS, m => `<span class="kw">${m}</span>`)
+      .replace(/\b(\d+\.?\d*)\b/g, m => `<span class="num">${m}</span>`);
+  }
+
+  function colorizeJSON(json) {
+    return esc(json).replace(
+      /("(?:[^"\\]|\\.)*")(\s*:)?|(\b(?:true|false)\b)|(\bnull\b)|(\b-?\d+\.?\d*\b)/g,
+      (m, str, colon, bool, nil, num) => {
+        if (str && colon) return `<span class="json-key">${str}</span>:`;
+        if (str)  return `<span class="json-str">${str}</span>`;
+        if (bool) return `<span class="json-bool">${bool}</span>`;
+        if (nil)  return `<span class="json-null">${nil}</span>`;
+        if (num)  return `<span class="json-num">${num}</span>`;
+        return m;
+      }
+    );
+  }
+</script>
+</body>
+</html>
