@@ -32,6 +32,8 @@ DataForge is an AI-powered web application that translates natural language quer
 - **Bring Your Own Database** — Drag and drop any `.db` SQLite file. DataForge reads the schema automatically and adapts to your tables.
 - **Autonomous Error Debugging** — If a query fails, the engine feeds the error back to the model and retries up to 3 times without any manual intervention.
 - **Live Schema Explorer** — A collapsible sidebar shows every table, column, type, and primary key in your uploaded database.
+- **Automated Data Cleaning** — Click "Clean Data" to dedupe rows, trim whitespace, and convert blank strings to NULL across every table, on demand. Table structure (columns, types, primary keys) is preserved; a before/after report shows exactly what changed.
+- **On-Demand Visualizations** — Click "Visualize" on any result set with numeric data to render an interactive bar, line, or pie chart (Chart.js) directly from the query results — no extra queries, no server round-trip.
 - **Cinematic Dark UI** — Built with Inter, Space Grotesk, and JetBrains Mono. SQL output includes full syntax highlighting. Results render in a clean, paginated table with a JSON output panel.
 
 ---
@@ -44,6 +46,8 @@ DataForge is an AI-powered web application that translates natural language quer
 | AI Model  | LLaMA 3.3 70B via Groq API          |
 | Database  | SQLite (via Python `sqlite3`)        |
 | Frontend  | Vanilla HTML, CSS, JavaScript        |
+| Data Cleaning | pandas                           |
+| Charts    | Chart.js (CDN, client-side)          |
 | Fonts     | Inter · Space Grotesk · JetBrains Mono (Google Fonts) |
 
 ---
@@ -112,6 +116,14 @@ Navigate to [http://localhost:5000](http://localhost:5000) in your browser.
 5. **Press Run** (or `Ctrl+Enter` / `Cmd+Enter`).
 
 DataForge will show the generated SQL, execute it, and display the results table. If the query fails, the auto-debug log will show each retry attempt and the corrected SQL.
+
+### Data cleaning
+
+Click **Clean Data** in the sidebar (appears once a database is loaded) to dedupe rows, trim whitespace, and convert blank strings to NULL across every table. A report card shows rows before/after, duplicates removed, and cells trimmed per table.
+
+### Visualizations
+
+After running a query that returns at least one numeric column, click **Visualize** on the Results card to render a chart from the returned rows. Switch between Bar, Line, and Pie using the dropdown — no re-query needed, it's rendered from the data already on screen.
 
 ### Example queries
 

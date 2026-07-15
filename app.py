@@ -4,6 +4,7 @@ import json
 import sqlite3
 import tempfile
 
+import pandas as pd
 from flask import Flask, request, jsonify, render_template
 from groq import Groq
 
@@ -89,6 +90,71 @@ Rules:
     return sql.strip()
 
 
+def clean_database(db_path: str) -> dict:
+    """Auto-clean every table in the database:
+      - trims leading/trailing whitespace on text columns
+      - converts blank strings to NULL
+      - drops exact duplicate rows
+    Table structure (columns, types, primary keys, indexes) is preserved —
+    rows are cleaned in a DataFrame, then the table is emptied and
+    re-populated via DELETE + INSERT (no DROP/CREATE).
+    Returns a per-table summary of what changed.
+    """
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+    tables = [r[0] for r in cur.fetchall()]
+
+    summary = {}
+    for t in tables:
+        df = pd.read_sql_query(f'SELECT * FROM "{t}"', conn)
+        rows_before = len(df)
+
+        cells_trimmed = 0
+        for col in df.select_dtypes(include="object").columns:
+            trimmed = df[col].apply(lambda v: v.strip() if isinstance(v, str) else v)
+            cells_trimmed += int((trimmed != df[col]).sum())
+            df[col] = trimmed
+            blanks = df[col].apply(lambda v: isinstance(v, str) and v == "")
+            df.loc[blanks, col] = None
+
+        # Dedupe on non-primary-key columns — an autoincrement PK makes every
+        # row "unique" even when the real data is a duplicate, so PK columns
+        # are excluded from the comparison (the first occurrence, with its
+        # original PK, is kept).
+        cur.execute(f'PRAGMA table_info("{t}")')
+        pk_cols = [r[1] for r in cur.fetchall() if r[5]]
+        compare_cols = [c for c in df.columns if c not in pk_cols] or list(df.columns)
+
+        deduped = df.drop_duplicates(subset=compare_cols, keep="first")
+        duplicates_removed = rows_before - len(deduped)
+
+        if duplicates_removed > 0 or cells_trimmed > 0:
+            cols = list(deduped.columns)
+            col_list = ", ".join(f'"{c}"' for c in cols)
+            placeholders = ", ".join("?" for _ in cols)
+            records = [
+                tuple(None if pd.isna(v) else v for v in row)
+                for row in deduped.itertuples(index=False, name=None)
+            ]
+            cur.execute(f'DELETE FROM "{t}"')
+            if records:
+                cur.executemany(
+                    f'INSERT INTO "{t}" ({col_list}) VALUES ({placeholders})', records
+                )
+
+        summary[t] = {
+            "rows_before":        rows_before,
+            "rows_after":         len(deduped),
+            "duplicates_removed": duplicates_removed,
+            "cells_trimmed":      cells_trimmed,
+        }
+
+    conn.commit()
+    conn.close()
+    return summary
+
+
 def execute_sql(sql: str, db_path: str):
     """Run SQL; return (rows, columns, error)."""
     try:
@@ -138,6 +204,23 @@ def upload():
         "schema_str": schema_str,
         "tables":     list(schema_dict.keys()),
     })
+
+
+@app.route("/clean", methods=["POST"])
+def clean():
+    """Auto-clean the currently loaded database: dedupe rows, trim whitespace,
+    blank strings -> NULL. Returns a per-table before/after summary."""
+    data = request.get_json()
+    db_path = data.get("db_path", "")
+
+    if not db_path or not os.path.exists(db_path):
+        return jsonify({"error": "No database loaded. Please upload a .db file first."}), 400
+
+    try:
+        summary = clean_database(db_path)
+        return jsonify({"summary": summary})
+    except Exception as e:
+        return jsonify({"error": f"Cleaning failed: {e}"}), 500
 
 
 @app.route("/query", methods=["POST"])

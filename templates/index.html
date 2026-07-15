@@ -155,6 +155,7 @@
       display: grid;
       grid-template-columns: 280px 1fr;
       height: calc(100vh - 62px);
+      min-height: 0;
       position: relative;
       z-index: 1;
     }
@@ -285,6 +286,68 @@
     .db-badge .badge-remove { cursor: pointer; color: var(--text-muted); flex-shrink: 0; line-height: 1; transition: color .2s; }
     .db-badge .badge-remove:hover { color: var(--error); }
 
+    /* Clean Data button */
+    .clean-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .clean-btn.show { display: flex; }
+    .clean-btn:hover { border-color: var(--accent2); color: var(--accent2); background: var(--accent2-glow); }
+    .clean-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Visualize button (inside results card head) */
+    .viz-btn {
+      margin-left: auto;
+      padding: 3px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--accent2);
+      font-size: 0.68rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .viz-btn:hover { background: var(--accent2-glow); border-color: var(--accent2); }
+    .card-badge + .viz-btn { margin-left: 8px; }
+
+    .chart-wrap {
+      padding: 18px;
+      border-top: 1px solid var(--border);
+    }
+    .chart-wrap select {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .chart-canvas-holder {
+      position: relative;
+      width: 100%;
+      height: 320px;
+    }
+
     /* Schema tree */
     .schema-empty { font-size: 0.78rem; color: var(--text-muted); padding: 4px 0; line-height: 1.6; }
 
@@ -361,6 +424,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      min-height: 0;
       background: var(--bg);
     }
 
@@ -482,6 +546,7 @@
     /* ── Results ──────────────────────────────────────────────────── */
     .results {
       flex: 1;
+      min-height: 0;
       overflow-y: auto;
       padding: 28px 32px;
       display: flex;
@@ -523,6 +588,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
+      flex-shrink: 0;
       animation: fadeUp .3s ease both;
     }
     @keyframes fadeUp {
@@ -798,6 +864,10 @@
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </span>
       </div>
+      <button class="clean-btn" id="clean-btn" onclick="cleanData()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span id="clean-btn-text">Clean Data</span>
+      </button>
     </div>
 
     <!-- Schema -->
@@ -847,11 +917,13 @@
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
   // ── State ─────────────────────────────────────────────────────────
   let dbPath    = null;
   let schemaStr = null;
   let schemaObj = null;
+  let activeChart = null;
 
   // ── Key toggle ────────────────────────────────────────────────────
   function toggleKey() {
@@ -890,6 +962,7 @@
 
       document.getElementById('db-name').textContent = file.name;
       document.getElementById('db-badge').classList.add('show');
+      document.getElementById('clean-btn').classList.add('show');
       dropZone.style.display = 'none';
 
       setConnected(true, file.name);
@@ -904,6 +977,7 @@
   function removeDb() {
     dbPath = schemaStr = schemaObj = null;
     document.getElementById('db-badge').classList.remove('show');
+    document.getElementById('clean-btn').classList.remove('show');
     document.getElementById('drop-zone').style.display = '';
     document.getElementById('schema-tree').innerHTML = '<p class="schema-empty">Upload a database to explore its schema.</p>';
     document.getElementById('chips').innerHTML = '';
@@ -921,6 +995,67 @@
       chip.classList.remove('connected');
       label.textContent = 'No database';
     }
+  }
+
+  // ── Data cleaning ─────────────────────────────────────────────────
+  async function cleanData() {
+    if (!dbPath) { toast('No database loaded.'); return; }
+    const btn     = document.getElementById('clean-btn');
+    const btnText = document.getElementById('clean-btn-text');
+    btn.disabled  = true;
+    btnText.textContent = 'Cleaning…';
+
+    try {
+      const res  = await fetch('/clean', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ db_path: dbPath })
+      });
+      const data = await res.json();
+      if (data.error) { toast(data.error); return; }
+      renderCleanReport(data.summary);
+      toast('Data cleaning complete');
+    } catch(e) {
+      toast('Cleaning failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btnText.textContent = 'Clean Data';
+    }
+  }
+
+  function renderCleanReport(summary) {
+    const container  = document.getElementById('results');
+    const placeholder = document.getElementById('placeholder');
+    if (placeholder) placeholder.remove();
+
+    const tables = Object.keys(summary);
+    const rCard = card('Data Cleaning Report', 'ok', tables.length + ' table(s)',
+      `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+
+    const wrap = el('div', 'tbl-wrap');
+    const tbl  = document.createElement('table');
+    const head = document.createElement('thead');
+    head.innerHTML = '<tr><th>Table</th><th>Rows Before</th><th>Rows After</th><th>Duplicates Removed</th><th>Cells Trimmed</th></tr>';
+    tbl.appendChild(head);
+
+    const body = document.createElement('tbody');
+    tables.forEach(t => {
+      const s  = summary[t];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${t}</td><td>${s.rows_before}</td><td>${s.rows_after}</td><td>${s.duplicates_removed}</td><td>${s.cells_trimmed}</td>`;
+      body.appendChild(tr);
+    });
+    tbl.appendChild(body);
+    wrap.appendChild(tbl);
+    rCard.body.appendChild(wrap);
+
+    const foot = el('div', 'tbl-footer');
+    const totalDupes = tables.reduce((a, t) => a + summary[t].duplicates_removed, 0);
+    const totalTrims = tables.reduce((a, t) => a + summary[t].cells_trimmed, 0);
+    foot.textContent = `${totalDupes} duplicate row(s) removed · ${totalTrims} cell(s) trimmed`;
+    rCard.body.appendChild(foot);
+
+    container.insertBefore(rCard.el, container.firstChild);
   }
 
   // ── Schema tree ───────────────────────────────────────────────────
@@ -1116,6 +1251,10 @@
         tCard.body.appendChild(nr);
       }
       container.appendChild(tCard.el);
+
+      if (data.rows && data.rows.length > 0 && numericColumnIndexes(data.columns, data.rows).length > 0) {
+        addVisualizeButton(tCard.el, data.columns, data.rows);
+      }
     }
 
     // JSON card
@@ -1134,6 +1273,108 @@
     jCard.body.appendChild(toggle);
     jCard.body.appendChild(jBody);
     container.appendChild(jCard.el);
+  }
+
+  // ── Visualization ─────────────────────────────────────────────────
+  function numericColumnIndexes(columns, rows) {
+    const idxs = [];
+    columns.forEach((c, i) => {
+      let hasValue = false;
+      const allNumeric = rows.every(r => {
+        const v = r[i];
+        if (v === null || v === undefined || v === '') return true;
+        hasValue = true;
+        return typeof v === 'number' || (!isNaN(parseFloat(v)) && isFinite(v));
+      });
+      if (allNumeric && hasValue) idxs.push(i);
+    });
+    return idxs;
+  }
+
+  function addVisualizeButton(cardEl, columns, rows) {
+    const head = cardEl.querySelector('.card-head');
+    const btn  = document.createElement('button');
+    btn.className = 'viz-btn';
+    btn.textContent = 'Visualize';
+    btn.onclick = () => toggleChart(cardEl, columns, rows, btn);
+    head.appendChild(btn);
+  }
+
+  function toggleChart(cardEl, columns, rows, btn) {
+    const existing = cardEl.querySelector('.chart-wrap');
+    if (existing) {
+      existing.remove();
+      if (activeChart) { activeChart.destroy(); activeChart = null; }
+      btn.textContent = 'Visualize';
+      return;
+    }
+
+    if (typeof Chart === 'undefined') {
+      toast('Chart library failed to load — check your internet connection and reload the page.');
+      return;
+    }
+
+    const wrap = el('div', 'chart-wrap');
+    const sel  = document.createElement('select');
+    sel.innerHTML = '<option value="bar">Bar</option><option value="line">Line</option><option value="pie">Pie</option>';
+    wrap.appendChild(sel);
+
+    const holder = el('div', 'chart-canvas-holder');
+    const canvas = document.createElement('canvas');
+    holder.appendChild(canvas);
+    wrap.appendChild(holder);
+    cardEl.appendChild(wrap);
+
+    const draw = (type) => {
+      try {
+        if (activeChart) activeChart.destroy();
+        activeChart = buildChart(canvas, columns, rows, type);
+      } catch (e) {
+        toast('Chart render failed: ' + e.message);
+      }
+    };
+    sel.onchange = e => draw(e.target.value);
+    draw('bar');
+    btn.textContent = 'Hide Chart';
+  }
+
+  function buildChart(canvas, columns, rows, type) {
+    const numericIdx = numericColumnIndexes(columns, rows);
+    const valueIdx = numericIdx[0];
+    const labelIdx = columns.findIndex((c, i) => !numericIdx.includes(i));
+
+    const CAP = 30;
+    const capped = rows.slice(0, CAP);
+    const labels = capped.map((r, i) => labelIdx >= 0 ? String(r[labelIdx]) : 'Row ' + (i + 1));
+    const values = capped.map(r => parseFloat(r[valueIdx]) || 0);
+
+    const palette = ['#6366f1', '#22d3ee', '#f59e0b', '#10b981', '#f472b6', '#818cf8', '#34d399', '#fbbf24', '#ef4444', '#a78bfa'];
+
+    return new Chart(canvas.getContext('2d'), {
+      type: type,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: columns[valueIdx],
+          data: values,
+          backgroundColor: type === 'pie' ? palette : 'rgba(99,102,241,0.5)',
+          borderColor: type === 'pie' ? '#0f1220' : '#6366f1',
+          borderWidth: type === 'pie' ? 2 : 1.5,
+          tension: 0.3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: type === 'pie', labels: { color: '#8890b0' } }
+        },
+        scales: type === 'pie' ? {} : {
+          x: { ticks: { color: '#8890b0' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#8890b0' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────────────
