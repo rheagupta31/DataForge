@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.env
+.env.local
+*.db-journal
+*.db-wal
+*.db-shm
+sample.db
+sample.db-journal
+.DS_Store
+.vscode/
+.idea/
+english_to_sql.ipynb

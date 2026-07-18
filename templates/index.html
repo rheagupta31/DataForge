@@ -309,9 +309,10 @@
     .clean-btn:hover { border-color: var(--accent2); color: var(--accent2); background: var(--accent2-glow); }
     .clean-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* Visualize button (inside results card head) */
+    /* Visualize / export buttons (inside results card head; .card-head has
+       gap:10px and .card-badge has margin-left:auto, which together push
+       any buttons after the badge to the right edge with even spacing) */
     .viz-btn {
-      margin-left: auto;
       padding: 3px 12px;
       border-radius: 20px;
       border: 1px solid var(--border);
@@ -325,7 +326,6 @@
       white-space: nowrap;
     }
     .viz-btn:hover { background: var(--accent2-glow); border-color: var(--accent2); }
-    .card-badge + .viz-btn { margin-left: 8px; }
 
     .chart-wrap {
       padding: 18px;
@@ -346,6 +346,148 @@
       position: relative;
       width: 100%;
       height: 320px;
+    }
+
+    /* Database connection tabs (Upload File / Connect URL) */
+    .db-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+    .db-tab {
+      flex: 1;
+      padding: 6px 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .db-tab.active { background: var(--surface3); color: var(--text); }
+    .db-tab:hover:not(.active) { color: var(--text-dim); }
+
+    .connect-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .connect-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .connect-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .db-hint {
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+    .engine-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      background: var(--surface3);
+      color: var(--accent2);
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Query history */
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-size: 0.74rem;
+      color: var(--text-dim);
+      transition: background .15s;
+    }
+    .history-item:hover { background: var(--surface3); }
+    .history-item .hist-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hist-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .hist-ok      { background: var(--success); box-shadow: 0 0 4px var(--success); }
+    .hist-err     { background: var(--error);   box-shadow: 0 0 4px var(--error); }
+    .hist-warn    { background: var(--warn);    box-shadow: 0 0 4px var(--warn); }
+    .hist-blocked { background: #94a3b8; }
+
+    /* Guardrail confirmation / blocked card */
+    .guardrail-msg {
+      padding: 16px 18px;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-dim);
+    }
+    .guardrail-actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 18px 18px;
+    }
+    .confirm-run-btn {
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: #1a1200;
+      font-weight: 700;
+      font-size: 0.8rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .confirm-run-btn:hover { opacity: .9; }
+    .confirm-cancel-btn {
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-weight: 600;
+      font-size: 0.8rem;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .confirm-cancel-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* Plain-English insight / explanation panels */
+    .insight-panel {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: var(--text-dim);
+      background: rgba(34,211,238,0.03);
+    }
+    .insight-panel .insight-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--accent2);
+      margin-bottom: 6px;
+      display: block;
     }
 
     /* Schema tree */
@@ -529,6 +671,36 @@
       font-family: 'Inter', sans-serif;
     }
     .chip:hover { border-color: var(--accent); color: var(--text); background: var(--accent-glow); }
+
+    /* Data governance row (reveal-masked toggle + manage link) */
+    .governance-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .reveal-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .reveal-toggle input { accent-color: var(--accent2); cursor: pointer; }
+    .governance-row a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .governance-row a:hover { opacity: .8; }
+    .masked-badge {
+      background: rgba(245,158,11,0.1);
+      color: var(--warn);
+      border: 1px solid rgba(245,158,11,0.2);
+    }
 
     /* Error banner */
     .err-banner {
@@ -836,7 +1008,7 @@
         <a href="https://console.groq.com/keys" target="_blank">Get free key</a>
       </div>
       <div class="input-wrap">
-        <input id="api-key" type="password" placeholder="gsk_..." autocomplete="off" spellcheck="false" />
+        <input id="api-key" type="password" placeholder="{{ 'gsk_... (optional — server key configured)' if has_server_api_key else 'gsk_...' }}" autocomplete="off" spellcheck="false" />
         <span class="eye-btn" onclick="toggleKey()" title="Toggle visibility">
           <svg id="eye-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -846,20 +1018,38 @@
     </div>
 
     <!-- Database -->
-    <div class="sidebar-section">
+    <div class="sidebar-section" id="db-section">
       <div class="section-label">Database</div>
-      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('db-file-input').click()">
-        <svg class="drop-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="18" cy="9" rx="12" ry="5" stroke="#5a6080" stroke-width="1.5"/>
-          <path d="M6 9v9c0 2.76 5.37 5 12 5s12-2.24 12-5V9" stroke="#5a6080" stroke-width="1.5"/>
-          <path d="M6 18v9c0 2.76 5.37 5 12 5s12-2.24 12-5v-9" stroke="#5a6080" stroke-width="1.5"/>
-        </svg>
-        <p>Drop your <span>.db file</span> here<br/>or click to browse</p>
+
+      <div class="db-tabs">
+        <button class="db-tab active" id="tab-upload" onclick="switchDbTab('upload')" type="button">Upload File</button>
+        <button class="db-tab" id="tab-connect" onclick="switchDbTab('connect')" type="button">Connect URL</button>
       </div>
-      <input type="file" id="db-file-input" accept=".db" />
+
+      <div id="db-panel-upload">
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('db-file-input').click()">
+          <svg class="drop-icon" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="18" cy="9" rx="12" ry="5" stroke="#5a6080" stroke-width="1.5"/>
+            <path d="M6 9v9c0 2.76 5.37 5 12 5s12-2.24 12-5V9" stroke="#5a6080" stroke-width="1.5"/>
+            <path d="M6 18v9c0 2.76 5.37 5 12 5s12-2.24 12-5v-9" stroke="#5a6080" stroke-width="1.5"/>
+          </svg>
+          <p>Drop your <span>.db, .csv, or .xlsx file</span> here<br/>or click to browse</p>
+        </div>
+        <input type="file" id="db-file-input" accept=".db,.csv,.xlsx,.xls" />
+      </div>
+
+      <div id="db-panel-connect" style="display:none;">
+        <div class="input-wrap">
+          <input id="connect-url" type="text" placeholder="postgresql://user:pass@host:5432/dbname" autocomplete="off" spellcheck="false" />
+        </div>
+        <button class="connect-btn" id="connect-btn" onclick="connectDb()" type="button">Connect</button>
+        <p class="db-hint">Supports PostgreSQL and MySQL connection strings (e.g. <code>mysql+pymysql://user:pass@host/db</code>). Sent to the local server only, never persisted.</p>
+      </div>
+
       <div class="db-badge" id="db-badge">
         <div class="badge-dot"></div>
         <span class="badge-name" id="db-name"></span>
+        <span class="engine-tag" id="engine-tag" style="display:none;"></span>
         <span class="badge-remove" onclick="removeDb()" title="Remove">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </span>
@@ -870,11 +1060,22 @@
       </button>
     </div>
 
+    <!-- Query History -->
+    <div class="sidebar-section" style="max-height:200px; display:flex; flex-direction:column;">
+      <div class="section-label">
+        History
+        <a href="javascript:void(0)" onclick="clearHistory()">Clear</a>
+      </div>
+      <div id="history-list" style="overflow-y:auto; flex:1;">
+        <p class="schema-empty">Your queries will appear here.</p>
+      </div>
+    </div>
+
     <!-- Schema -->
     <div class="sidebar-section" style="flex:1; border-bottom:none;">
       <div class="section-label">Schema</div>
       <div id="schema-tree">
-        <p class="schema-empty">Upload a database to explore its schema.</p>
+        <p class="schema-empty">Connect a database to explore its schema.</p>
       </div>
     </div>
 
@@ -897,6 +1098,13 @@
         </button>
       </div>
       <div class="chips" id="chips"></div>
+      <div class="governance-row">
+        <label class="reveal-toggle">
+          <input type="checkbox" id="reveal-masked" />
+          Reveal sensitive columns for this query
+        </label>
+        <a href="javascript:void(0)" onclick="editMaskedColumns()">Manage masked columns</a>
+      </div>
       <div class="err-banner" id="err-banner"></div>
     </div>
 
@@ -908,7 +1116,7 @@
           <path d="M14 20h28M14 28h20M14 36h14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
         <h3>Ready to query</h3>
-        <p>Upload a SQLite database, enter your Groq API key, and ask anything about your data — in plain English.</p>
+        <p>Upload a SQLite/CSV/Excel file or connect to Postgres/MySQL, enter your Groq API key, and ask anything about your data — in plain English.</p>
       </div>
     </div>
 
@@ -919,11 +1127,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script>
+  const hasServerApiKey = {{ 'true' if has_server_api_key else 'false' }};
+
   // ── State ─────────────────────────────────────────────────────────
-  let dbPath    = null;
-  let schemaStr = null;
-  let schemaObj = null;
+  let dbUrl       = null;
+  let dbEngine    = null;
+  let schemaStr   = null;
+  let schemaObj   = null;
   let activeChart = null;
+  let queryHistory = [];
+  const HISTORY_KEY = 'dataforge_query_history';
 
   // ── Key toggle ────────────────────────────────────────────────────
   function toggleKey() {
@@ -947,7 +1160,8 @@
   });
 
   async function uploadFile(file) {
-    if (!file.name.endsWith('.db')) { toast('Only .db files are supported'); return; }
+    const okExt = /\.(db|csv|xlsx|xls)$/i.test(file.name);
+    if (!okExt) { toast('Only .db, .csv, or .xlsx files are supported'); return; }
     toast('Uploading database...');
     const fd = new FormData();
     fd.append('db_file', file);
@@ -955,31 +1169,75 @@
       const res  = await fetch('/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.error) { toast(data.error); return; }
-
-      dbPath    = data.db_path;
-      schemaStr = data.schema_str;
-      schemaObj = data.schema;
-
-      document.getElementById('db-name').textContent = file.name;
-      document.getElementById('db-badge').classList.add('show');
-      document.getElementById('clean-btn').classList.add('show');
-      dropZone.style.display = 'none';
-
-      setConnected(true, file.name);
-      renderSchema(schemaObj);
-      renderChips(data.tables);
-      toast('Database loaded — ' + data.tables.length + ' table(s)');
+      onDbConnected(data);
     } catch(e) {
       toast('Upload failed: ' + e.message);
     }
   }
 
+  // ── Connect via URL (Postgres / MySQL) ───────────────────────────────
+  function switchDbTab(which) {
+    document.getElementById('tab-upload').classList.toggle('active', which === 'upload');
+    document.getElementById('tab-connect').classList.toggle('active', which === 'connect');
+    document.getElementById('db-panel-upload').style.display  = which === 'upload'  ? '' : 'none';
+    document.getElementById('db-panel-connect').style.display = which === 'connect' ? '' : 'none';
+  }
+
+  async function connectDb() {
+    const url = document.getElementById('connect-url').value.trim();
+    if (!url) { toast('Enter a connection string first.'); return; }
+
+    const btn = document.getElementById('connect-btn');
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'Connecting…';
+
+    try {
+      const res  = await fetch('/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ db_url: url })
+      });
+      const data = await res.json();
+      if (data.error) { toast(data.error); return; }
+      onDbConnected(data);
+    } catch(e) {
+      toast('Connection failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  // ── Shared: called after either /upload or /connect succeeds ────────
+  function onDbConnected(data) {
+    dbUrl     = data.db_url;
+    dbEngine  = data.engine;
+    schemaStr = data.schema_str;
+    schemaObj = data.schema;
+
+    document.getElementById('db-name').textContent = data.label || data.tables.join(', ');
+    document.getElementById('db-badge').classList.add('show');
+    document.getElementById('clean-btn').classList.add('show');
+    dropZone.style.display = 'none';
+
+    const tag = document.getElementById('engine-tag');
+    if (dbEngine) { tag.textContent = dbEngine; tag.style.display = ''; }
+
+    setConnected(true, data.label || 'Connected');
+    renderSchema(schemaObj);
+    renderChips(data.tables);
+    toast('Database connected — ' + data.tables.length + ' table(s)');
+  }
+
   function removeDb() {
-    dbPath = schemaStr = schemaObj = null;
+    dbUrl = dbEngine = schemaStr = schemaObj = null;
     document.getElementById('db-badge').classList.remove('show');
     document.getElementById('clean-btn').classList.remove('show');
+    document.getElementById('engine-tag').style.display = 'none';
     document.getElementById('drop-zone').style.display = '';
-    document.getElementById('schema-tree').innerHTML = '<p class="schema-empty">Upload a database to explore its schema.</p>';
+    document.getElementById('connect-url').value = '';
+    document.getElementById('schema-tree').innerHTML = '<p class="schema-empty">Connect a database to explore its schema.</p>';
     document.getElementById('chips').innerHTML = '';
     fileInput.value = '';
     setConnected(false);
@@ -997,9 +1255,33 @@
     }
   }
 
+  // ── Data governance (column masking) ─────────────────────────────────
+  async function editMaskedColumns() {
+    try {
+      const cur = await (await fetch('/mask-settings')).json();
+      const current = (cur.masked_columns || []).join(', ');
+      const input = prompt(
+        'Column names to mask in results (comma-separated, case-insensitive).\n' +
+        'These are redacted server-side unless "Reveal sensitive columns" is checked.',
+        current
+      );
+      if (input === null) return; // cancelled
+      const columns = input.split(',').map(s => s.trim()).filter(Boolean);
+      const res = await fetch('/mask-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns })
+      });
+      const data = await res.json();
+      toast('Masked columns updated: ' + (data.masked_columns.join(', ') || 'none'));
+    } catch (e) {
+      toast('Could not update masked columns: ' + e.message);
+    }
+  }
+
   // ── Data cleaning ─────────────────────────────────────────────────
   async function cleanData() {
-    if (!dbPath) { toast('No database loaded.'); return; }
+    if (!dbUrl) { toast('No database connected.'); return; }
     const btn     = document.getElementById('clean-btn');
     const btnText = document.getElementById('clean-btn-text');
     btn.disabled  = true;
@@ -1009,7 +1291,7 @@
       const res  = await fetch('/clean', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ db_path: dbPath })
+        body: JSON.stringify({ db_url: dbUrl })
       });
       const data = await res.json();
       if (data.error) { toast(data.error); return; }
@@ -1056,6 +1338,57 @@
     rCard.body.appendChild(foot);
 
     container.insertBefore(rCard.el, container.firstChild);
+  }
+
+  // ── Query history (persisted client-side via localStorage) ──────────
+  function loadHistory() {
+    try {
+      queryHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch (e) {
+      queryHistory = [];
+    }
+    renderHistory();
+  }
+
+  function saveHistoryEntry(entry) {
+    queryHistory.unshift(entry);
+    queryHistory = queryHistory.slice(0, 25);
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(queryHistory)); } catch (e) {}
+    renderHistory();
+  }
+
+  function clearHistory() {
+    queryHistory = [];
+    try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    if (queryHistory.length === 0) {
+      list.innerHTML = '<p class="schema-empty">Your queries will appear here.</p>';
+      return;
+    }
+    list.innerHTML = '';
+    queryHistory.forEach(h => {
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      const dotClass =
+        h.status === 'success' ? 'hist-ok' :
+        h.status === 'blocked' ? 'hist-blocked' :
+        h.status === 'confirmation_required' ? 'hist-warn' : 'hist-err';
+      const dot = el('span', `hist-dot ${dotClass}`);
+      const text = el('span', 'hist-text');
+      text.textContent = h.english;
+      item.appendChild(dot);
+      item.appendChild(text);
+      item.title = (h.ts ? new Date(h.ts).toLocaleString() + ' — ' : '') + (h.status || '');
+      item.onclick = () => {
+        document.getElementById('query-input').value = h.english;
+        toast('Loaded from history — press Run');
+      };
+      list.appendChild(item);
+    });
   }
 
   // ── Schema tree ───────────────────────────────────────────────────
@@ -1126,9 +1459,15 @@
     banner.classList.remove('show');
 
     if (!english) { showBanner('Please enter a query.'); return; }
-    if (!dbPath)  { showBanner('No database loaded. Please upload a .db file.'); return; }
-    if (!apiKey)  { showBanner('Please enter your Groq API key.'); return; }
+    if (!dbUrl)   { showBanner('No database connected. Upload a file or connect to a database.'); return; }
+    if (!apiKey && !hasServerApiKey) { showBanner('Please enter your Groq API key.'); return; }
 
+    await executeQuery(english, apiKey, false, null);
+  }
+
+  // Core query runner — shared by the Run button and the "Run Anyway"
+  // confirmation button (which resends the exact previously-reviewed SQL).
+  async function executeQuery(english, apiKey, confirmed, sqlOverride) {
     const btn = document.getElementById('run-btn');
     btn.classList.add('loading');
     btn.disabled = true;
@@ -1137,19 +1476,27 @@
     results.innerHTML = `
       <div class="placeholder">
         <svg class="placeholder-icon" style="opacity:.08;animation:spin 2s linear infinite" viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="22" stroke="white" stroke-width="3" stroke-dasharray="34 100"/></svg>
-        <h3>Generating SQL</h3>
-        <p>Sending your question to LLaMA 3.3...</p>
+        <h3>${sqlOverride ? 'Running confirmed query' : 'Generating SQL'}</h3>
+        <p>${sqlOverride ? 'Executing the reviewed statement...' : 'Sending your question to LLaMA 3.3...'}</p>
       </div>`;
+
+    const revealMasked = document.getElementById('reveal-masked').checked;
 
     try {
       const res  = await fetch('/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ english, db_path: dbPath, api_key: apiKey, schema_str: schemaStr })
+        body: JSON.stringify({
+          english, db_url: dbUrl, api_key: apiKey, schema_str: schemaStr,
+          confirmed: confirmed, sql_override: sqlOverride || '',
+          reveal_masked: revealMasked,
+        })
       });
       const data = await res.json();
       if (data.error) { showBanner(data.error); results.innerHTML = ''; return; }
-      renderResults(data);
+
+      saveHistoryEntry({ ts: Date.now(), english, status: data.final_status, sql: data.final_sql });
+      renderResults(data, english, apiKey);
     } catch(e) {
       showBanner('Request failed: ' + e.message);
       results.innerHTML = '';
@@ -1163,23 +1510,61 @@
     document.getElementById('query-input').addEventListener('keydown', e => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runQuery();
     });
+    loadHistory();
   });
 
   // ── Render results ────────────────────────────────────────────────
-  function renderResults(data) {
+  function renderResults(data, english, apiKey) {
     const container = document.getElementById('results');
     container.innerHTML = '';
 
-    const ok       = data.final_status === 'success';
-    const hasDebug = data.debug_attempts && data.debug_attempts.length > 0;
+    const ok          = data.final_status === 'success';
+    const needsConfirm = data.final_status === 'confirmation_required';
+    const blocked      = data.final_status === 'blocked';
+    const hasDebug     = data.debug_attempts && data.debug_attempts.length > 0;
 
     // SQL card
-    const sqlCard = card('Generated SQL', ok ? 'ok' : 'err', ok ? 'Executed' : 'Failed',
+    const sqlBadgeType = ok ? 'ok' : (needsConfirm ? 'warn' : 'err');
+    const sqlBadgeText = ok ? 'Executed' : needsConfirm ? 'Needs Confirmation' : blocked ? 'Blocked' : 'Failed';
+    const sqlCard = card('Generated SQL', sqlBadgeType, sqlBadgeText,
       `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`);
     const sqlBlock = el('div', 'sql-block');
     sqlBlock.innerHTML = highlightSQL(data.final_sql || data.sql_generated || '');
     sqlCard.body.appendChild(sqlBlock);
     container.appendChild(sqlCard.el);
+    if (data.final_sql || data.sql_generated) {
+      addExplainButton(sqlCard.el, data.final_sql || data.sql_generated, apiKey);
+    }
+
+    // Guardrail card — confirmation required or blocked outright. Stop here;
+    // there's no result set / debug log to show for a query that never ran.
+    if (needsConfirm || blocked) {
+      const gCard = card(
+        blocked ? 'Blocked by Safety Guardrail' : 'Confirmation Required',
+        blocked ? 'err' : 'warn', '',
+        `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l6 2.5v4c0 4-2.7 6.6-6 7.5-3.3-.9-6-3.5-6-7.5V4l6-2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M8 7.5v2.7M8 12v.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`
+      );
+      const msg = el('div', 'guardrail-msg');
+      msg.textContent = data.guardrail_message || '';
+      gCard.body.appendChild(msg);
+
+      if (needsConfirm) {
+        const actions = el('div', 'guardrail-actions');
+        const runBtn = document.createElement('button');
+        runBtn.className = 'confirm-run-btn';
+        runBtn.textContent = 'Run Anyway';
+        runBtn.onclick = () => executeQuery(english, apiKey, true, data.final_sql);
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'confirm-cancel-btn';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => { container.innerHTML = ''; };
+        actions.appendChild(runBtn);
+        actions.appendChild(cancelBtn);
+        gCard.body.appendChild(actions);
+      }
+      container.appendChild(gCard.el);
+      return;
+    }
 
     // Debug card
     if (hasDebug) {
@@ -1210,6 +1595,12 @@
     if (ok) {
       const tCard = card('Results', 'info', data.result_rows + ' row(s)',
         `<svg class="card-head-icon" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 6h14M6 6v8" stroke="currentColor" stroke-width="1.2"/></svg>`);
+
+      if (data.masked_columns && data.masked_columns.length > 0) {
+        const badge = el('span', 'card-badge masked-badge');
+        badge.textContent = data.masked_columns.length + ' column(s) masked';
+        tCard.el.querySelector('.card-head').appendChild(badge);
+      }
 
       if (data.rows && data.rows.length > 0) {
         const wrap = el('div', 'tbl-wrap');
@@ -1252,8 +1643,12 @@
       }
       container.appendChild(tCard.el);
 
-      if (data.rows && data.rows.length > 0 && numericColumnIndexes(data.columns, data.rows).length > 0) {
-        addVisualizeButton(tCard.el, data.columns, data.rows);
+      if (data.rows && data.rows.length > 0) {
+        addExportButtons(tCard.el, data.columns, data.rows);
+        addSummarizeButton(tCard.el, english, data.final_sql, data.columns, data.rows, apiKey);
+        if (numericColumnIndexes(data.columns, data.rows).length > 0) {
+          addVisualizeButton(tCard.el, data.columns, data.rows);
+        }
       }
     }
 
@@ -1273,6 +1668,141 @@
     jCard.body.appendChild(toggle);
     jCard.body.appendChild(jBody);
     container.appendChild(jCard.el);
+  }
+
+  // ── Export (CSV client-side, Excel via server round-trip) ───────────
+  function addExportButtons(cardEl, columns, rows) {
+    const head = cardEl.querySelector('.card-head');
+
+    const csvBtn = document.createElement('button');
+    csvBtn.className = 'viz-btn';
+    csvBtn.textContent = 'Export CSV';
+    csvBtn.onclick = () => exportCSV(columns, rows, 'query_results.csv');
+
+    const xlsxBtn = document.createElement('button');
+    xlsxBtn.className = 'viz-btn';
+    xlsxBtn.textContent = 'Export Excel';
+    xlsxBtn.onclick = () => exportXLSX(columns, rows, 'query_results.xlsx');
+
+    head.appendChild(csvBtn);
+    head.appendChild(xlsxBtn);
+  }
+
+  function exportCSV(columns, rows, filename) {
+    const escCsv = v => {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const lines = [columns.map(escCsv).join(',')];
+    rows.forEach(r => lines.push(r.map(escCsv).join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, filename);
+  }
+
+  async function exportXLSX(columns, rows, filename) {
+    try {
+      const res = await fetch('/export/xlsx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ columns, rows, filename })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        toast(err.error || 'Export failed');
+        return;
+      }
+      const blob = await res.blob();
+      downloadBlob(blob, filename);
+    } catch (e) {
+      toast('Export failed: ' + e.message);
+    }
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Plain-English insights ───────────────────────────────────────────
+  function addExplainButton(cardEl, sql, apiKey) {
+    const head = cardEl.querySelector('.card-head');
+    const btn = document.createElement('button');
+    btn.className = 'viz-btn';
+    btn.textContent = 'Explain SQL';
+    btn.onclick = () => explainSQL(cardEl, sql, apiKey, btn);
+    head.appendChild(btn);
+  }
+
+  async function explainSQL(cardEl, sql, apiKey, btn) {
+    const existing = cardEl.querySelector('.insight-panel.explain');
+    if (existing) { existing.remove(); btn.textContent = 'Explain SQL'; return; }
+
+    btn.textContent = 'Explaining…';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sql, dialect: dbEngine || 'sqlite', api_key: apiKey })
+      });
+      const data = await res.json();
+      if (data.error) { toast(data.error); return; }
+      const panel = el('div', 'insight-panel explain');
+      panel.innerHTML = '<span class="insight-label">In plain English</span>';
+      const text = document.createElement('span');
+      text.textContent = data.explanation;
+      panel.appendChild(text);
+      cardEl.appendChild(panel);
+      btn.textContent = 'Hide Explanation';
+    } catch (e) {
+      toast('Explain failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function addSummarizeButton(cardEl, english, sql, columns, rows, apiKey) {
+    const head = cardEl.querySelector('.card-head');
+    const btn = document.createElement('button');
+    btn.className = 'viz-btn';
+    btn.textContent = 'Summarize';
+    btn.onclick = () => summarizeResults(cardEl, english, sql, columns, rows, apiKey, btn);
+    head.appendChild(btn);
+  }
+
+  async function summarizeResults(cardEl, english, sql, columns, rows, apiKey, btn) {
+    const existing = cardEl.querySelector('.insight-panel.summary');
+    if (existing) { existing.remove(); btn.textContent = 'Summarize'; return; }
+
+    btn.textContent = 'Summarizing…';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ english, sql, columns, rows: rows.slice(0, 50), api_key: apiKey })
+      });
+      const data = await res.json();
+      if (data.error) { toast(data.error); return; }
+      const panel = el('div', 'insight-panel summary');
+      panel.innerHTML = '<span class="insight-label">What this data shows</span>';
+      const text = document.createElement('span');
+      text.textContent = data.summary;
+      panel.appendChild(text);
+      cardEl.appendChild(panel);
+      btn.textContent = 'Hide Summary';
+    } catch (e) {
+      toast('Summarize failed: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   // ── Visualization ─────────────────────────────────────────────────

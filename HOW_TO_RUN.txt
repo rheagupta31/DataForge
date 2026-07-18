@@ -3,26 +3,56 @@ DataForge — English → SQL Web App
 
 REQUIREMENTS
   Python 3.9+  |  A free Groq API key (https://console.groq.com/keys)
+  (Optional) A running PostgreSQL or MySQL instance, if not using SQLite
 
 SETUP (run once)
   pip install -r requirements.txt
+  cp .env.example .env      # optional — set GROQ_API_KEY here to skip pasting it in-browser
 
 START THE SERVER
   python app.py
 
   Then open your browser at:  http://localhost:5000
 
+  For production, use gunicorn instead of "python app.py":
+    gunicorn --bind 0.0.0.0:5000 --workers 4 app:app
+  Or Docker:
+    docker build -t dataforge .
+    docker run -p 5000:5000 --env-file .env dataforge
+
 HOW TO USE
-  1. Paste your Groq API key in the sidebar (gsk_...)
-  2. Drag & drop any SQLite .db file into the upload zone
+  1. Paste your Groq API key in the sidebar (gsk_...) — skip this if the
+     server already has GROQ_API_KEY set in .env
+  2. Connect a database: drag & drop a .db / .csv / .xlsx file, OR switch
+     to the "Connect URL" tab and paste a PostgreSQL/MySQL connection string
   3. Your database schema appears automatically in the sidebar
   4. Type any question in plain English (or click an example chip)
   5. Press ▶ Run  (or Ctrl+Enter / Cmd+Enter)
   6. See the generated SQL, results table, and auto-debug log
   7. Click "Clean Data" to dedupe rows / trim whitespace across all tables
   8. Click "Visualize" on any result with numeric data for a chart
+  9. Click "Export CSV" / "Export Excel" to download any result set
+  10. Check the "History" panel in the sidebar to reload a past query
+  11. Click "Summarize" for a plain-English takeaway of the results, or
+      "Explain SQL" to have the query translated into plain English
+  12. Check "Reveal sensitive columns" to see masked columns (salary, ssn,
+      etc.) for one query; click "Manage masked columns" to edit the list
+
+SAFETY GUARDRAILS
+  - DROP / ALTER / TRUNCATE / PRAGMA and similar statements are blocked
+    outright — DataForge will never execute them, confirmed or not
+  - INSERT / UPDATE / DELETE / CREATE will show the generated SQL and ask
+    you to confirm ("Run Anyway") before executing
+  - Sensitive columns (salary, ssn, password, credit_card, dob by default)
+    are redacted server-side unless explicitly revealed
+  - /query, /connect, /summarize, /explain are rate-limited per IP
+
+RUNNING THE TEST SUITE
+  pip install -r requirements-dev.txt
+  pytest -v
 
 NOTES
-  - The app supports any SQLite .db file — not just the sample one
+  - Works with SQLite (.db / .csv / .xlsx upload), PostgreSQL, and MySQL
+    (connect via URL)
   - If SQL fails, the engine retries up to 3 times automatically,
     feeding the error back to LLaMA 3.3 each time
